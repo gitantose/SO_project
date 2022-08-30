@@ -43,7 +43,7 @@ void countActiveProcess(Process* proc) {
 
 // return the final position of the world in the file
 // assuming that not have repeat of word
-float numberKB(char* path, char* str) {
+double numberKB(char* path, char* str) {
 	FILE * f = fopen(path, "r");
 	char c;
 	char number[30];
@@ -63,19 +63,99 @@ float numberKB(char* path, char* str) {
 	
 	if (key) {
 		c = fgetc(f);
-		while (c == ' ')
+		while (c == ' ' || c == '\t')
 			c = fgetc(f);
 		while (c=='0' || c=='1' || c=='2' || c=='3' || c=='4' || c=='5' ||
 						c=='6' || c=='7' || c=='8' || c=='9') {
 			number[n++] = c;
+			printf("%c", c);
 			c = fgetc(f);
 		}
 		number[n] = '\0';
+		fclose(f);
 		return atoi(number);		
-	} else 
-		printf("String not found\n");
+	}
+	fclose(f);
 	return -1;
 }
 
+void setVariableProcess(Process * p) {
+	if ((*p).pid == 0) return;
+	char pid[BUF_LEN], ni[4], priority[4], virtual[BUF_LEN], starttime[BUF_LEN], utime[BUF_LEN], stime[BUF_LEN];
+	int index=0, i_ni=0, i_priority=0, i_virtual=0, i_starttime=0, i_utime=0, i_stime=0;
+	char c = 'a';
+	
+	sprintf(pid, "%d", (*p).pid);
+	char path[SIZE_PATH] = "";
+	strcat(path, "/proc/");
+	strcat(path, pid);
+	strcat(path, "/stat");
+	FILE * f = fopen(path, "r");
+	if (f == NULL) {
+		printf("ERRORE nell' apertura del file\n");
+		return;
+	}
+	while (c != EOF) {
+		c = fgetc(f);
+		if (c == ' ') 
+			index++;
+		else if (index == 2) // setto lo stato del processo;
+			(*p).status = c;
+		else if (index == 17) // setto la priorità
+			priority[i_priority++] = c;
+		else if (index == 18) // setto il nice value
+			ni[i_ni++] = c;
+		else if (index == 22) // virtual memory in byte
+			virtual[i_virtual++] = c;
+		else if (index == 13)
+			utime[i_utime++] = c;
+		else if (index == 14)
+			stime[i_stime] = c;
+		else if (index == 21)
+			starttime[i_starttime] = c;
+	}
+	
+	priority[i_priority] = '\0';
+	ni[i_ni] = '\0';
+	virtual[i_virtual] = '\0';
+	utime[i_utime] = '\0';
+	stime[i_stime] = '\0';
+	starttime[i_starttime] = '\0';
+	(*p).priority = atoi(priority);
+	(*p).ni = atoi(ni);
+	(*p).virt = atol(virtual);
+	// (*p).cpu = (atoi(utime) + atoi(stime)) / atoi(starttime); // TODO gestire errore
+	fclose(f);
+	
+	// read status 
+	strcat(path, "us");
+	
+	printf("%s", path);
+	
+	(*p).shr = (long) numberKB(path, "RssShmem");
+	
+	// read cmdline
+	path[0] = '\0';
+	strcat(path, "/proc/");
+	strcat(path, pid);
+	strcat(path, "/cmdline");
 
+	f = fopen(path, "r");
+	if (f == NULL) {
+		printf("ERRORE nell'apertura del file\n");
+	} else {
+		c = 'a';
+		index = 0;
+		while (c != EOF) {
+			c = fgetc(f);
+			(*p).command[index++] = c;
+		}
+	}
+	fclose(f);
+	
+}
+
+void printProcess(Process p) {
+	printf("Pid: %d, Status: %c, User: %s, Priority: %d, NI: %d, Virt: %ld, CPU: %0.1f, Time: %d, SHR: %ld, Mem: %0.1f, Res: %ld, Command: %s\n", p.pid, p.status, p.user, p.priority, p.ni, p.virt, p.cpu, p.time, p.shr, p.mem, p.res, p.command); 
+}
 

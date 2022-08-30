@@ -6,6 +6,8 @@
 void readDir(Process* proc);
 void printPID(Process* proc);
 void countActiveProcess(Process* proc);
-float numberKB(char* path, char* str);
+double numberKB(char* path, char* str);
+void setVariableProcess(Process * p);
+void printProcess(Process p);
 
 #endif

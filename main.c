@@ -20,8 +20,10 @@ void setMemoryVar() {
 	printf("MemTotal: %f\n", memTot);
 	memFree = numberKB("/proc/meminfo", "MemFree") / 1024;
 	printf("MemFree: %f\n", memFree);
-	//memUsed
-	//memCache
+	memCache = numberKB("/proc/meminfo", "Cached") / 1024;
+	printf("MemCache: %f\n", memCache);
+	memUsed = memTot - memFree - memCache;
+	printf("MemUsed: %f\n", memUsed);
 	memSwapTot = numberKB("/proc/meminfo", "SwapTotal") / 1024;
 	printf("SwapTotal: %f\n", memSwapTot);
 	memSwapFree = numberKB("/proc/meminfo", "SwapFree") / 1024;
@@ -32,13 +34,33 @@ void setMemoryVar() {
 	printf("Available: %f\n", memAvai);
 }
 
+void setProcessVar() {
+	for (int i=0; i<MAX_PROC; i++) {
+		if (proc[i].pid == 1610) {
+			setVariableProcess(&proc[i]);
+			printProcess(proc[i]);
+		}
+		//set the user
+		//set the priority
+		//set the NI (nice value of task)
+		// set the virtual memory
+		// set how much RAM the process used
+		// set the shared memory used
+		// set the status
+		//set the percentage of cpu
+		// set the percentage of memory
+		// set the time
+		// set command
+	}
+}
+
 int main() {
   // read the '/proc' directory
 	readDir(proc);
 	// printPID(proc);
 	// countActiveProcess(proc);
-	setMemoryVar();
-	
+	// setMemoryVar();
+	setProcessVar();
   return 0;
 }
 
