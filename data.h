@@ -4,10 +4,10 @@
 #include "main.h"
 
 void readDir(Process* proc);
-void printPID(Process* proc);
-void countActiveProcess(Process* proc);
-double numberKB(char* path, char* str);
-void setVariableProcess(Process * p);
+void print(Process* proc, int n);
+void countActiveProcess(Process* proc, int* activeProc);
+long numberKB(char* path, char* str);
+void setVariableProcess(Process * p, Passwd* pass);
 void printProcess(Process p);
 
 #endif

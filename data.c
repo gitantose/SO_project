@@ -5,45 +5,50 @@ void readDir(Process* proc) {
 	int size = 0;
 	DIR *d;
 	struct dirent *dir;
-	int value = -1;
+	char value[20] = "";
 	d = opendir("/proc");
   if (d) {
   	while ((dir = readdir(d)) != NULL) {
-  		//printf("%s\n", dir->d_name);
-  		value = atoi(dir->d_name);
-  		if (value != 0) 
-  			proc[size++].pid = value;
+  		
+  		if (atoi(dir->d_name) != 0) {
+  			strcpy(proc[size++].pid, dir->d_name);
+  			// printf("%s\n", dir->d_name);
+  		}
   	}
   closedir(d);
   }
 }
 
-// print pid active process
-void printPID(Process* proc) {
-	printf("PID Process\n");
-	for (int i = 0; i<MAX_PROC; i++) {
-		if (proc[i].pid==0) {
-			printf("\n");
+
+void printProcess(Process p) {
+	printf("Pid: %s, Status: %c, User: %s, Priority: %d, NI: %d, Virt: %ld, CPU: %0.1f, Time: %d, SHR: %ld, Mem: %0.1f, Res: %ld, Command: %s\n", p.pid, p.status, p.user, p.priority, p.ni, p.virt, p.cpu, p.time, p.shr, p.mem, p.res, p.command); 
+}
+
+// print a process
+void print(Process* proc, int n) {
+	for (int i = 0; i<MAX_PROC && i<n; i++) {
+		if (strcmp(proc[i].pid,"0") == 0) {
+			printf("\n\n");
 			return;
 		}
-		printf("%d  ", proc[i].pid);
+		printProcess(proc[i]);
 	}
 	printf("\n");
 }
 
 // count active process and set the variable "activeProc"
-void countActiveProcess(Process* proc) {
+void countActiveProcess(Process* proc, int* activeProc) {
 	for (int i = 0; i<MAX_PROC; i++) {
-		if (proc[i].pid==0) {
+		if (strcmp(proc[i].pid,"")==0) {
 			printf("Processi attivi: %d\n", i);
+			*activeProc = i;
 			break;
 		}
 	}
 }
 
-// return the final position of the world in the file
-// assuming that not have repeat of word
-double numberKB(char* path, char* str) {
+// restituisce il primo numero che segue a str
+long numberKB(char* path, char* str) {
 	FILE * f = fopen(path, "r");
 	char c;
 	char number[30];
@@ -68,7 +73,6 @@ double numberKB(char* path, char* str) {
 		while (c=='0' || c=='1' || c=='2' || c=='3' || c=='4' || c=='5' ||
 						c=='6' || c=='7' || c=='8' || c=='9') {
 			number[n++] = c;
-			printf("%c", c);
 			c = fgetc(f);
 		}
 		number[n] = '\0';
@@ -79,20 +83,20 @@ double numberKB(char* path, char* str) {
 	return -1;
 }
 
-void setVariableProcess(Process * p) {
+void setVariableProcess(Process * p, Passwd* pass) {
 	if ((*p).pid == 0) return;
-	char pid[BUF_LEN], ni[4], priority[4], virtual[BUF_LEN], starttime[BUF_LEN], utime[BUF_LEN], stime[BUF_LEN];
-	int index=0, i_ni=0, i_priority=0, i_virtual=0, i_starttime=0, i_utime=0, i_stime=0;
+	char pid[5]="", ni[4], priority[4], virtual[BUF_LEN], starttime[BUF_LEN], utime[BUF_LEN], stime[BUF_LEN], uptime[BUF_LEN], cutime[BUF_LEN], cstime[BUF_LEN];
+	int index=0, i_ni=0, i_priority=0, i_virtual=0, i_starttime=0, i_utime=0, i_stime=0, i_uptime=0, i_cutime=0, i_cstime=0;
 	char c = 'a';
 	
-	sprintf(pid, "%d", (*p).pid);
 	char path[SIZE_PATH] = "";
 	strcat(path, "/proc/");
-	strcat(path, pid);
+	strcat(path, (*p).pid);
 	strcat(path, "/stat");
+	
 	FILE * f = fopen(path, "r");
 	if (f == NULL) {
-		printf("ERRORE nell' apertura del file\n");
+		// printf("ERRORE nell' apertura del file stat\n");
 		return;
 	}
 	while (c != EOF) {
@@ -105,15 +109,22 @@ void setVariableProcess(Process * p) {
 			priority[i_priority++] = c;
 		else if (index == 18) // setto il nice value
 			ni[i_ni++] = c;
-		else if (index == 22) // virtual memory in byte
-			virtual[i_virtual++] = c;
 		else if (index == 13)
 			utime[i_utime++] = c;
 		else if (index == 14)
-			stime[i_stime] = c;
+			stime[i_stime++] = c;
+		else if (index == 15)
+			cutime[i_cutime++] = c;
+		else if (index == 16)
+			cstime[i_cstime++] = c;
 		else if (index == 21)
-			starttime[i_starttime] = c;
+			starttime[i_starttime++] = c;
+		else if (index == 22) // virtual memory in byte
+			virtual[i_virtual++] = c;
+		else if (index == 24)
+			c = EOF;
 	}
+	fclose(f);
 	
 	priority[i_priority] = '\0';
 	ni[i_ni] = '\0';
@@ -123,39 +134,69 @@ void setVariableProcess(Process * p) {
 	starttime[i_starttime] = '\0';
 	(*p).priority = atoi(priority);
 	(*p).ni = atoi(ni);
-	(*p).virt = atol(virtual);
-	// (*p).cpu = (atoi(utime) + atoi(stime)) / atoi(starttime); // TODO gestire errore
-	fclose(f);
+	(*p).virt = (long) atol(virtual) / 1024; //rappresentata in kB
 	
-	// read status 
+	// uptime	
+	f = fopen("/proc/uptime", "r");
+	c = 'a';
+	while(c != EOF) {
+		c = fgetc(f);
+		if (c == ' ') {
+			uptime[i_uptime + 1] = '\0';
+			c = EOF;
+		}
+		else
+			uptime[i_uptime++] = c;
+	}
+	fclose(f);
+
+	(*p).cpu = (float) abs(((atoi(utime) + atoi(stime))) / (atoi(starttime) - atoi(uptime)));
+	long h = atol(utime) + atol(stime) + atoi(cutime) + atoi(cstime);
+	// TODO manca il time+
+	
+	// read /proc/[pid]/status 
 	strcat(path, "us");
 	
-	printf("%s", path);
+	long RSsh =  numberKB(path, "RssShmem");
+	long RSan = numberKB(path, "RssAnon");
+	long RSfd = numberKB(path, "RssFile");
+	if (RSsh == -1) RSsh = 0; 		// not found
+	if (RSan == -1) RSan = 0;			// not found
+	if (RSfd == -1) RSfd = 0;			// not found
+	// printf("%ld %ld %ld\n", RSsh, RSan, RSfd);
+	(*p).shr = RSsh;
+	(*p).res = RSsh + RSan + RSfd;
+	int x = numberKB(path, "Uid");
+	char temp[BUF_LEN];
+	sprintf(temp, "%d", x);
+	index = 0;
+	while(index < PASSWD_SIZE) {
+		if (strcmp(temp, pass[index].uid) == 0) {
+			strcpy((*p).user, pass[index].name);
+			index = PASSWD_SIZE;
+		}
+		index++;
+	}
 	
-	(*p).shr = (long) numberKB(path, "RssShmem");
-	
-	// read cmdline
+	// read /proc/[pid]/cmdline
 	path[0] = '\0';
 	strcat(path, "/proc/");
-	strcat(path, pid);
+	strcat(path, (*p).pid);
 	strcat(path, "/cmdline");
 
 	f = fopen(path, "r");
 	if (f == NULL) {
-		printf("ERRORE nell'apertura del file\n");
+		// printf("ERRORE nell'apertura del file cmdline\n");
 	} else {
 		c = 'a';
 		index = 0;
-		while (c != EOF) {
+		while (c != EOF && index<MAX_SIZE_COMMAND-1) {
 			c = fgetc(f);
 			(*p).command[index++] = c;
 		}
+		(*p).command[index] = '\0';
 	}
 	fclose(f);
-	
 }
 
-void printProcess(Process p) {
-	printf("Pid: %d, Status: %c, User: %s, Priority: %d, NI: %d, Virt: %ld, CPU: %0.1f, Time: %d, SHR: %ld, Mem: %0.1f, Res: %ld, Command: %s\n", p.pid, p.status, p.user, p.priority, p.ni, p.virt, p.cpu, p.time, p.shr, p.mem, p.res, p.command); 
-}
 
