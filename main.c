@@ -1,5 +1,6 @@
 #include "main.h"
 #include "data.h"
+#include "window.h"
 
 Process proc[MAX_PROC] = {0x0};
 int activeProc = 0;
@@ -43,7 +44,6 @@ void setMemoryVar() {
 }
 
 void setProcessVar() {
-	
 	FILE* f = fopen("/etc/passwd", "r");
 	char string[200], *tok, *res;
 	Passwd pass[PASSWD_SIZE];
@@ -63,6 +63,7 @@ void setProcessVar() {
 	
 	for (int i=0; i<MAX_PROC; i++) {
 		if (atoi(proc[i].pid) != 0) {
+
 			setVariableProcess(&proc[i], pass);
 			proc[i].mem = proc[i].res / 1,024 / memTot;
 			usleep(1000);
@@ -88,10 +89,11 @@ int main() {
 	countActiveProcess(proc, &activeProc);
 	setMemoryVar();
 	setProcessVar();
-	print(proc, activeProc);
-	qsort(&proc, activeProc, sizeof(Process), (void*) processCmp);
-	printf("------------------\n");
-	print(proc, activeProc);
+	//print(proc, activeProc);
+  //qsort(&proc, activeProc, sizeof(Process), (void*) processCmp);
+	//printf("------------------\n");
+	//print(proc, activeProc);
+	window();
   return 0;
 }
 

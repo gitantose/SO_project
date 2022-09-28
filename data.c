@@ -21,7 +21,7 @@ void readDir(Process* proc) {
 
 
 void printProcess(Process p) {
-	printf("Pid: %s, Status: %c, User: %s, Priority: %d, NI: %d, Virt: %ld, CPU: %0.1f, Time: %d, SHR: %ld, Mem: %0.1f, Res: %ld, Command: %s\n", p.pid, p.status, p.user, p.priority, p.ni, p.virt, p.cpu, p.time, p.shr, p.mem, p.res, p.command); 
+	printf("Pid: %s, Status: %c, User: %s, Priority: %d, NI: %d, Virt: %ld, CPU: %0.3f, Time: %d, SHR: %ld, Mem: %0.1f, Res: %ld, Command: %s\n", p.pid, p.status, p.user, p.priority, p.ni, p.virt, p.cpu, p.time, p.shr, p.mem, p.res, p.command); 
 }
 
 // print a process
@@ -31,7 +31,8 @@ void print(Process* proc, int n) {
 			printf("\n\n");
 			return;
 		}
-		printProcess(proc[i]);
+		if (proc[i].mem > 0.0)
+			printProcess(proc[i]);
 	}
 	printf("\n");
 }
@@ -40,7 +41,7 @@ void print(Process* proc, int n) {
 void countActiveProcess(Process* proc, int* activeProc) {
 	for (int i = 0; i<MAX_PROC; i++) {
 		if (strcmp(proc[i].pid,"")==0) {
-			printf("Processi attivi: %d\n", i);
+			//printf("Processi attivi: %d\n", i);
 			*activeProc = i;
 			break;
 		}
@@ -93,6 +94,7 @@ void setVariableProcess(Process * p, Passwd* pass) {
 	strcat(path, "/proc/");
 	strcat(path, (*p).pid);
 	strcat(path, "/stat");
+
 	
 	FILE * f = fopen(path, "r");
 	if (f == NULL) {
@@ -150,7 +152,10 @@ void setVariableProcess(Process * p, Passwd* pass) {
 	}
 	fclose(f);
 
-	(*p).cpu = (float) abs(((atoi(utime) + atoi(stime))) / (atoi(starttime) - atoi(uptime)));
+	double a = atof(utime)/sysconf(_SC_CLK_TCK);
+	double b = atof(stime)/sysconf(_SC_CLK_TCK);
+	double cc = atof(starttime)/sysconf(_SC_CLK_TCK);
+	(*p).cpu = (double) (( a+ b)) * 100 / (atof(uptime) - cc);
 	long h = atol(utime) + atol(stime) + atoi(cutime) + atoi(cstime);
 	// TODO manca il time+
 	
