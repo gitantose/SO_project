@@ -6,6 +6,6 @@
 
 WINDOW *create_newwin(int height, int width, int starty, int startx, int box);
 void destroy_win(WINDOW *local_win);
-void window();
+void window(Process* proc);
 	
 #endif

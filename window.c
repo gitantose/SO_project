@@ -2,31 +2,56 @@
 
 int startx, starty, width, height;
 WINDOW *my_win;
-int aux = 1;
+int aux = 1, cur = 0;
+char buf[100], str[100];
 
 void* win1() {
-		initscr();
-		raw();
-		keypad(stdscr, TRUE);		/* I need that nifty F2 	*/
+		//initscr();
+		//raw();
+		//keypad(stdscr, TRUE);		/* I need that nifty F2 	*/
 		WINDOW* input = create_newwin(1, width, height, startx, 0);
 		mvprintw(height, startx, " > ");
-		move(height, startx+3);
 
     int ch;
-		while((ch = getch()) != KEY_F(2)) {
+		move(height, startx + 4 + cur);
+		while(1) {
+			ch = getch();
+			//getstr(str);
+			//printw("Hai inserito: %d", (int) ch);
+			if (ch == 263) {		//backspace
+				if (cur != 0) {
+					cur -= 1;
+					mvprintw(height, startx + 4 + cur, " ");
+					buf[cur] = ' ';
+				}
+			}
+			else if (ch == 10) { // enter
+				mvprintw(height, startx, " > ");
+				for (int i=startx + 3; i<width-3; i++) 
+					mvprintw(height, i, " ");
+				buf[cur] = '\0';
+				cur = 0;
+				if (strcmp(buf, "quit") == 0)
+					break;
+				// TODO implementare kill e relive process
+			}
+			else {
+				buf[cur] = ch;
+				cur += 1;
+			}
+			move(height, startx + 4 + cur);
     }
 		aux = 0;
 		destroy_win(input);
     endwin();
 }
 
-void* win2() {
-		
-		while(aux) {
-
-			my_win = create_newwin(height, width, starty, startx, 1);
-			mvprintw(starty, (width-5)/2 , " My TOP ");
-			mvprintw(height - 1,(width-16)/2 , " Press F2 for exit ");
+void* win2(Process* proc) {
+		int x = 0;
+		destroy_win(my_win);
+		my_win = create_newwin(height, width, starty, startx, 1);		
+			mvprintw(starty, (width-5)/2 , " My TOP %d", x);
+			mvprintw(height - 1,(width-17)/2 , " Press F2 for exit ");
 			for (int i=startx+1; i<width-1; i++) {
 				for (int j=starty+1; j<height-3; j++) 
 					mvprintw(j, i, " ");
@@ -39,16 +64,25 @@ void* win2() {
 				mvprintw(starty + 5, i, "_");
 				mvprintw(starty + 9, i, "-");
 			}
-			move(height, startx+3);
+			char menu[12][8] = {"PID", "USER", "PR", "NI", "VIRT", "RES", "SHR", "S", "CPU %", "MEM %", "TIME+", "Command"};
+			for (int i=1, e=0; i<24; i+=2, e++)
+					mvprintw(starty + 7, i*(width-startx)/24 - strlen(menu[e])/2, "%s", menu[e]);
+			mvprintw(starty + 2, startx + 3, "MiB Mem:");
+			mvprintw(starty + 2, (width-startx)/6 - strlen("Inserisci total"), "INSERISCI total"); //TODO inserisci numero 
+			
+		while(aux) {
+			for (int p=0; p<height; p++)
+					mvprintw(starty + 11 + p, 1*(width-startx)/24 - strlen(proc[p].pid)/2, "%s", proc[p].pid);
+			move(height, startx + 4 + cur);
 			refresh();
 			sleep(1);
-			
+			//destroy_win(my_win);
     }
     destroy_win(my_win);
     endwin();
 }
 
-void window() {
+void window(Process* proc) {
     initscr();			/* Start curses mode 		*/
     raw();			/* Line buffering disabled, Pass on
 				 * everty thing to me 		*/
@@ -56,20 +90,20 @@ void window() {
 
     keypad(stdscr, TRUE);		/* I need that nifty F2 	*/
     getmaxyx(stdscr,height,width);		/* get the number of rows and columns */
-    height -= 1;
+    height -= 2;
     starty = 0;	/* Calculating for a center placement */
     startx = 0;	/* of the window		*/
-    //printw("Press F2 to exit");
+    printw("Press F2 to exit");
     //refresh();
      
     //my_win = create_newwin(height, width, starty, startx);
     pthread_t thread[2];
-    int ret = pthread_create(&thread[0], NULL, win1, NULL);
-   	ret = pthread_create(&thread[1], NULL, win2, NULL);
+    int ret = pthread_create(&thread[1], NULL, (void *)win2, (void*) &proc); // metto prima win 2 per poter far stampare la 'box'
+   	ret = pthread_create(&thread[0], NULL, win1, NULL);
    	//pthread_join(&thread[0], NULL);
 		//pthread_join(&thread[1], NULL);
     
-		pthread_exit(NULL);    
+		pthread_exit(NULL); 
 }
 
 WINDOW *create_newwin(int height, int width, int starty, int startx, int box) {	

@@ -90,10 +90,10 @@ int main() {
 	setMemoryVar();
 	setProcessVar();
 	//print(proc, activeProc);
-  //qsort(&proc, activeProc, sizeof(Process), (void*) processCmp);
+  qsort(&proc, activeProc, sizeof(Process), (void*) processCmp);
 	//printf("------------------\n");
 	//print(proc, activeProc);
-	window();
+	window(proc);
   return 0;
 }
 
