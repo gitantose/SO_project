@@ -8,6 +8,9 @@
 #include <time.h>
 #include <ncurses.h>
 #include <pthread.h>
+#include <sys/wait.h>
+#include <errno.h>
+
 
 #ifndef _MAIN_GUARD
 #define _MAIN_GUARD
@@ -34,6 +37,21 @@ typedef struct {
 	long res; // RAM memory used
 	char command[MAX_SIZE_COMMAND]; // name of the command that started the process
 } Process;
+
+typedef struct {
+	int activeProc;
+	int runningProc;
+	int sleepProc;
+	int zombieProc;
+	float memTot; //memFree + memUsed + memCash
+	float memFree;
+	float memUsed;
+	float memCache;
+	float memAvai;
+	float memSwapTot;
+	float memSwapFree;
+	float memSwapUsed;
+} Global;
 
 typedef struct {
 	char uid[BUF_LEN];

@@ -29,20 +29,26 @@ void print(Process* proc, int n) {
 	for (int i = 0; i<MAX_PROC && i<n; i++) {
 		if (strcmp(proc[i].pid,"0") == 0) {
 			printf("\n\n");
-			return;
+			//return;
 		}
-		if (proc[i].mem > 0.0)
+		else 
 			printProcess(proc[i]);
 	}
 	printf("\n");
 }
 
 // count active process and set the variable "activeProc"
-void countActiveProcess(Process* proc, int* activeProc) {
+void countActiveProcess(Process* proc, Global* glob) {
 	for (int i = 0; i<MAX_PROC; i++) {
+		if (proc[i].status == 'R')
+			glob->runningProc += 1;
+		else if(proc[i].status == 'S')
+			glob->sleepProc += 1;
+		else if(proc[i].status == 'Z')
+			glob->zombieProc += 1;
 		if (strcmp(proc[i].pid,"")==0) {
 			//printf("Processi attivi: %d\n", i);
-			*activeProc = i;
+			glob->activeProc = i;
 			break;
 		}
 	}
@@ -51,7 +57,7 @@ void countActiveProcess(Process* proc, int* activeProc) {
 // restituisce il primo numero che segue a str
 long numberKB(char* path, char* str) {
 	FILE * f = fopen(path, "r");
-	char c;
+	char c = ' ';
 	char number[30];
 	int n = 0;
 	int ret = 0, index = 0, len = strlen(str);
@@ -66,6 +72,7 @@ long numberKB(char* path, char* str) {
 			index = 0;
 		ret++;
 	}
+	
 	if (key) {
 		c = fgetc(f);
 		while (c == ' ' || c == '\t')
@@ -170,7 +177,7 @@ void setVariableProcess(Process * p, Passwd* pass) {
 	// printf("%ld %ld %ld\n", RSsh, RSan, RSfd);
 	(*p).shr = RSsh;
 	(*p).res = RSsh + RSan + RSfd;
-	int x = numberKB(path, "Uid");
+	int x = numberKB(path, "Uid:");
 	char temp[BUF_LEN];
 	sprintf(temp, "%d", x);
 	index = 0;
@@ -189,6 +196,7 @@ void setVariableProcess(Process * p, Passwd* pass) {
 	strcat(path, "/cmdline");
 
 	f = fopen(path, "r");
+	
 	if (f == NULL) {
 		// printf("ERRORE nell'apertura del file cmdline\n");
 	} else {
@@ -196,6 +204,8 @@ void setVariableProcess(Process * p, Passwd* pass) {
 		index = 0;
 		while (c != EOF && index<MAX_SIZE_COMMAND-1) {
 			c = fgetc(f);
+			//if (strcmp((*p).pid, "2") == 0)
+				//printf("%s %c\n", (*p).pid, c);
 			(*p).command[index++] = c;
 		}
 		(*p).command[index] = '\0';
