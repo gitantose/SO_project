@@ -63,7 +63,6 @@ void setProcessVar() {
 	
 	for (int i=0; i<MAX_PROC; i++) {
 		if (atoi(proc[i].pid) != 0) {
-
 			setVariableProcess(&proc[i], pass);
 			proc[i].mem = proc[i].res / 1,024 / memTot;
 			usleep(1000);

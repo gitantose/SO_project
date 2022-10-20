@@ -66,7 +66,6 @@ long numberKB(char* path, char* str) {
 			index = 0;
 		ret++;
 	}
-	
 	if (key) {
 		c = fgetc(f);
 		while (c == ' ' || c == '\t')

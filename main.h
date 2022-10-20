@@ -9,7 +9,6 @@
 #include <ncurses.h>
 #include <pthread.h>
 
-
 #ifndef _MAIN_GUARD
 #define _MAIN_GUARD
 

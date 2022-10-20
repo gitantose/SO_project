@@ -113,7 +113,6 @@ WINDOW *create_newwin(int height, int width, int starty, int startx, int box) {
 	    box(local_win, 0 , 0);		/* 0, 0 gives default characters 
 					   for the vertical and horizontal
 					    lines			*/
-
     wrefresh(local_win);		/* Show that box 		*/
     return local_win;
 }

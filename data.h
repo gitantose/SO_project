@@ -3,6 +3,7 @@
 
 #include "main.h"
 
+
 void readDir(Process* proc);
 void print(Process* proc, int n);
 void countActiveProcess(Process* proc, int* activeProc);
