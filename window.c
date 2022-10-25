@@ -42,7 +42,6 @@ void term_win(int height, int width, int starty, int startx, int* cur) {
         	mvprintw(height, startx + 4, "Segnale inviato correttamente");
         refresh();
         sleep(3);
-        clean_term(height, width, startx);
 			}
 			else if (strcmp(command, RESUME) == 0) {
 				pid_t pid = atoi(strtok(NULL, " "));
@@ -74,6 +73,7 @@ void term_win(int height, int width, int starty, int startx, int* cur) {
         refresh();
         sleep(3);
 			}
+			clean_term(height, width, startx);
 		}
 		else {
 			buf[*cur] = ch;
