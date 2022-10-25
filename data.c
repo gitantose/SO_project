@@ -21,7 +21,7 @@ void readDir(Process* proc) {
 
 
 void printProcess(Process p) {
-	printf("Pid: %s, Status: %c, User: %s, Priority: %d, NI: %d, Virt: %ld, CPU: %0.3f, Time: %d, SHR: %ld, Mem: %0.1f, Res: %ld, Command: %s\n", p.pid, p.status, p.user, p.priority, p.ni, p.virt, p.cpu, p.time, p.shr, p.mem, p.res, p.command); 
+	printf("Pid: %s, Status: %c, User: %s, Priority: %d, NI: %d, Virt: %ld, CPU: %0.3f, Time: %f, SHR: %ld, Mem: %0.1f, Res: %ld, Command: %s\n", p.pid, p.status, p.user, p.priority, p.ni, p.virt, p.cpu, p.time, p.shr, p.mem, p.res, p.command); 
 }
 
 // print a process
@@ -162,8 +162,8 @@ void setVariableProcess(Process * p, Passwd* pass) {
 	double b = atof(stime)/sysconf(_SC_CLK_TCK);
 	double cc = atof(starttime)/sysconf(_SC_CLK_TCK);
 	(*p).cpu = (double) (( a+ b)) * 100 / (atof(uptime) - cc);
-	long h = atol(utime) + atol(stime) + atoi(cutime) + atoi(cstime);
-	// TODO manca il time+
+	//long h = atol(utime) + atol(stime) + atoi(cutime) + atoi(cstime);
+	(*p).time = atof(utime) + atof(stime);
 	
 	// read /proc/[pid]/status 
 	strcat(path, "us");
@@ -177,6 +177,35 @@ void setVariableProcess(Process * p, Passwd* pass) {
 	// printf("%ld %ld %ld\n", RSsh, RSan, RSfd);
 	(*p).shr = RSsh;
 	(*p).res = RSsh + RSan + RSfd;
+	(*p).mem = (*p).shr + (*p).res;
+/*
+  // read /proc/[pid]/statm
+  strcat(path, "m");
+  char shr[BUF_LEN] = "", res[BUF_LEN] = "";
+  int i_shr = 0, i_res = 0;
+  c = ' ';
+  f = fopen(path, "r");
+	if (f == NULL) {
+		// printf("ERRORE nell' apertura del file stat\n");
+		return;
+	}
+	while (c != EOF) {
+		c = fgetc(f);
+		if (c == ' ') 
+			index++;
+		else if (index == 1) // setto memoria RAM;
+			res[i_res++] = c;
+		else if (index == 2) // setto memoria condivisa;
+			shr[i_shr++] = c;
+		else
+			c = EOF;
+	}
+	fclose(f);
+	res[i_res] = '\0';
+	shr[i_shr] = '\0';
+	(*p).res = atol(res);
+	(*p).shr = atol(shr);
+ */ 	
 	int x = numberKB(path, "Uid:");
 	char temp[BUF_LEN];
 	sprintf(temp, "%d", x);

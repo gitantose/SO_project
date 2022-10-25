@@ -4,7 +4,8 @@
 
 Process proc[MAX_PROC] = {0x0};
 Global glob;
-int running;
+int running, cur = 0;
+int height, width, starty, startx;
 
 static int processCmp(const void* p1, const void* p2) {
 	Process* a = (Process*) p1;
@@ -57,7 +58,7 @@ void setProcessVar() {
 
 			setVariableProcess(&proc[i], pass);
 			proc[i].mem = proc[i].res / 1,024 / glob.memTot;
-			usleep(1000);
+			usleep(10);
 			//set the user OK
 			//set the priority OK
 			//set the NI (nice value of task) OK
@@ -67,34 +68,30 @@ void setProcessVar() {
 			// set the status OK
 			//set the percentage of cpu OK
 			// set the percentage of memory
-			// set the time
+			// set the time OK
 			// set command OK
 		}
 	}
 }
 
-void* run0() {
-	//printf("run0\n");
-	window(proc, &glob);
-	printf("terminato");
-/*	char c;
-	while (1) {
-		c = getch();
-		if (c=='q') 
-			break;
-		print(proc, 20);
-		printf("--------------------------------------------------\n");
-		sleep(1);
-	}
-*/	
+void* terminale() {
+	term_win(height, width, starty, startx, &cur);
 	running = 0;
-	pthread_exit(NULL); 
 }
 
-void* run1() {
-	char x[1000000];
-	int i = 0;
-	while(running) {
+int main() {
+	// ALTERNATIVA
+	//crea window e setta dati iniziali
+	WINDOW* main_win = create_main_win(&height, &width, &startx, &starty);
+	running = 1;
+	// crea thread per abilitare lettura di dati da terminale
+	pthread_t term_thread;
+	int ret = pthread_create(&term_thread, NULL, terminale, NULL);
+	if (ret == -1)
+		exit(EXIT_FAILURE);
+	int x=0;
+	while (running) {
+		// leggi dati e riempi array
 		readDir(proc);
 		glob.activeProc = 0;
 		glob.runningProc = 0;
@@ -104,40 +101,11 @@ void* run1() {
 		setProcessVar();
 		countActiveProcess(proc, &glob);
   	qsort(&proc, glob.activeProc, sizeof(Process), (void*) processCmp);
-  	//sleep(0.5);
+		// stampa su window
+		print_main_win(main_win, proc, &glob, height, width, starty, startx, &cur, &x);
+		x++;
+		sleep(1);
 	}
-	pthread_exit(NULL); 
-}
-
-int main() {
-// SEQUENZIALE
-	readDir(proc);
-	glob.activeProc = 0;
-	glob.runningProc = 0;
-	glob.sleepProc = 0;
-	glob.zombieProc = 0;
-	setMemoryVar();
-	setProcessVar();
-	countActiveProcess(proc, &glob);
-  qsort(&proc, glob.activeProc, sizeof(Process), (void*) processCmp);
-	//print(proc, 20);
-	window(proc, &glob);
-/*
-
-	running = 1;
-	pthread_t thread[2];
-  int ret = pthread_create(&thread[1], NULL, run1, NULL);
-  sleep(1);
-  //run0();
-  ret = pthread_create(&thread[0], NULL, run0, NULL);
-  printf("0\n");
-  pthread_join(thread[0], NULL);
-  printf("1\n");
-	pthread_join(thread[1], NULL);
-  printf("2\n");
-	//pthread_exit(NULL); 
-	printf("3\n");
-*/
   return 0;
 }
 

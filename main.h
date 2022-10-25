@@ -30,7 +30,7 @@ typedef struct {
 	int priority; // priority
 	long virt; // virtual memory used
 	float cpu; // percentual of CPU usage
-	int time; // CPU time
+	float time; // CPU time
 	long shr; // shared memory used
 	int ni; // rapresent a nice value of task. A negative value implies higher priority
 	float mem; // percentual of memory used
