@@ -100,7 +100,7 @@ void print_main_win(WINDOW* win, Process* proc, Global* glob, int height, int wi
 		for (int j=starty; j<height-starty; j++)
 			mvprintw(j, i, " ");
 	refresh();
-	mvprintw(starty, (width-startx)/2 - strlen(" My TOP ")/2, " My TOP ");
+	mvprintw(starty, (width-startx)/2 - strlen(" My TOP di Serra Antonio - 1893530 ")/2, " My TOP di Serra Antonio - 1893530 ");
 	mvprintw(height - 1,(width-startx)/2 - strlen(" Run 'shutdown' for exit ")/2, " Run 'shutdown' for exit ");
 	for (int i=startx+1; i<width-1; i++) {
 		for (int j=starty+1; j<height-3; j++) 
