@@ -7,5 +7,7 @@ void readDir(Process* proc);
 void countActiveProcess(Process* proc, Global* glob);
 long find_first_occ(char* path, char* str);
 void setVariableProcess(Process * p, Passwd* pass);
+void setProcessVar(Process* proc, Global* glob);
+void setMemoryVar(Global* glob);
 
 #endif

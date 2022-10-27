@@ -9,13 +9,10 @@ void readDir(Process* proc) {
 	d = opendir("/proc");
   if (d) {
   	while ((dir = readdir(d)) != NULL) {
-  		
-  		if (atoi(dir->d_name) != 0) {
+  		if (atoi(dir->d_name) != 0)
   			strcpy(proc[size++].pid, dir->d_name);
-  			// printf("%s\n", dir->d_name);
-  		}
   	}
-  closedir(d);
+  	closedir(d);
   }
 }
 
@@ -29,7 +26,6 @@ void countActiveProcess(Process* proc, Global* glob) {
 		else if(proc[i].status == 'Z')
 			glob->zombieProc += 1;
 		if (strcmp(proc[i].pid,"")==0) {
-			//printf("Processi attivi: %d\n", i);
 			glob->activeProc = i;
 			break;
 		}
@@ -39,6 +35,8 @@ void countActiveProcess(Process* proc, Global* glob) {
 // restituisce il primo numero che segue a str
 long find_first_occ(char* path, char* str) {
 	FILE * f = fopen(path, "r");
+	if (f == NULL) 
+		exit(EXIT_FAILURE);
 	char c = ' ';
 	char number[30];
 	int n = 0;
@@ -85,19 +83,18 @@ void setVariableProcess(Process * p, Passwd* pass) {
 
 	
 	FILE * f = fopen(path, "r");
-	if (f == NULL) {
-		// printf("ERRORE nell' apertura del file stat\n");
-		return;
-	}
+	if (f == NULL)
+		exit(EXIT_FAILURE);
+
 	while (c != EOF) {
 		c = fgetc(f);
 		if (c == ' ') 
 			index++;
-		else if (index == 2) // setto lo stato del processo;
+		else if (index == 2)
 			(*p).status = c;
-		else if (index == 17) // setto la priorità
+		else if (index == 17)
 			priority[i_priority++] = c;
-		else if (index == 18) // setto il nice value
+		else if (index == 18)
 			ni[i_ni++] = c;
 		else if (index == 13)
 			utime[i_utime++] = c;
@@ -128,6 +125,8 @@ void setVariableProcess(Process * p, Passwd* pass) {
 	
 	// uptime	
 	f = fopen("/proc/uptime", "r");
+	if (f == NULL)
+		exit(EXIT_FAILURE);
 	c = 'a';
 	while(c != EOF) {
 		c = fgetc(f);
@@ -182,19 +181,61 @@ void setVariableProcess(Process * p, Passwd* pass) {
 	f = fopen(path, "r");
 	
 	if (f == NULL) {
-		// printf("ERRORE nell'apertura del file cmdline\n");
-	} else {
+		exit(EXIT_FAILURE);
+	} 
+	else {
 		c = 'a';
 		index = 0;
 		while (c != EOF && index<MAX_SIZE_COMMAND-1) {
 			c = fgetc(f);
-			//if (strcmp((*p).pid, "2") == 0)
-				//printf("%s %c\n", (*p).pid, c);
 			(*p).command[index++] = c;
 		}
 		(*p).command[index] = '\0';
 	}
 	fclose(f);
+}
+
+
+
+void setMemoryVar(Global* glob) {
+	(*glob).memTot = find_first_occ("/proc/meminfo", "MemTotal") / 1024;
+	(*glob).memFree = find_first_occ("/proc/meminfo", "MemFree") / 1024;
+	(*glob).memCache = find_first_occ("/proc/meminfo", "Cached") / 1024;
+	(*glob).memUsed = (*glob).memTot - (*glob).memFree - (*glob).memCache;
+	(*glob).memSwapTot = find_first_occ("/proc/meminfo", "SwapTotal") / 1024;
+	(*glob).memSwapFree = find_first_occ("/proc/meminfo", "SwapFree") / 1024;
+	(*glob).memSwapUsed = (*glob).memSwapTot - (*glob).memSwapFree;
+	(*glob).memAvai = find_first_occ("/proc/meminfo", "MemAvailable") / 1024;
+}
+
+void setProcessVar(Process* proc, Global* glob) {
+	FILE* f = fopen("/etc/passwd", "r");
+	if (f == NULL)
+		exit(EXIT_FAILURE);
+	char string[200], *tok, *res;
+	Passwd pass[PASSWD_SIZE];
+	int index = 0;
+	while (1) {
+		res = fgets(string, 200, f);
+		if (res == NULL)
+			break;
+		tok = strtok(string, ":");
+		strcpy(pass[index].name, tok);
+		tok = strtok(NULL, ":");
+		tok = strtok(NULL, ":");
+		strcpy(pass[index].uid, tok);
+		index++;
+	}
+	fclose(f);
+	
+	for (int i=0; i<MAX_PROC; i++) {
+		if (atoi(proc[i].pid) != 0) {
+
+			setVariableProcess(&proc[i], pass);
+			proc[i].mem = proc[i].res / 10.24 / (*glob).memTot;
+			usleep(10);
+		}
+	}
 }
 
 

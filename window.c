@@ -26,7 +26,7 @@ void term_win(int height, int width, int starty, int startx, int* cur, int* acti
 	while(1) {
 		ch = getch();
 		if (ch == 263) {		//backspace
-			if (*cur != 0) {
+			if (*cur > 0) {
 				*cur -= 1;
 				mvprintw(height, startx + 4 + *cur, " ");
 				buf[*cur] = ' ';
@@ -52,10 +52,6 @@ void term_win(int height, int width, int starty, int startx, int* cur, int* acti
 			else if (strcmp(command, KILL) == 0) {
 				command = strtok(NULL, " ");
 				pid = atoi(command);
-				// TODO verifica che inviando 'kill' non fa segmentation fault
-//				mvprintw(height, startx + 4 , "%s", command);
-	//			refresh();
-		//		sleep(2);
 				if (pid != 0) {
 					int ret=kill(pid, SIGTERM);
   	    	check_ret(ret, height, startx);
@@ -97,10 +93,14 @@ void term_win(int height, int width, int starty, int startx, int* cur, int* acti
 	endwin();
 }
 
-void print_main_win(WINDOW* win, Process* proc, Global* glob, int height, int width, int starty, int startx, int* cur, int* x) {
+void print_main_win(WINDOW* win, Process* proc, Global* glob, int height, int width, int starty, int startx, int* cur, char* t) {
 	char menu[12][8] = {"PID", "USER", "PR", "NI", "VIRT", "RES", "SHR", "S", "CPU %", "MEM %", "TIME+", "Command"};
 	char tmp[BUF_LEN];
-	mvprintw(starty, (width-startx)/2 - strlen(" My TOP ")/2, " My TOP %d ", *x);
+	for (int i=startx; i<width-startx; i++)
+		for (int j=starty; j<height-starty; j++)
+			mvprintw(j, i, " ");
+	refresh();
+	mvprintw(starty, (width-startx)/2 - strlen(" My TOP ")/2, " My TOP ");
 	mvprintw(height - 1,(width-startx)/2 - strlen(" Run 'shutdown' for exit ")/2, " Run 'shutdown' for exit ");
 	for (int i=startx+1; i<width-1; i++) {
 		for (int j=starty+1; j<height-3; j++) 
@@ -117,7 +117,7 @@ void print_main_win(WINDOW* win, Process* proc, Global* glob, int height, int wi
 		
 	for (int i=1, e=0; i<24; i+=2, e++)
 		mvprintw(starty + 7, i*(width-startx)/24 - strlen(menu[e])/2, "%s", menu[e]);
-							
+				
 	mvprintw(starty + 2, (width-startx)/12 + 3, "MiB Mem:");
 	sprintf(tmp, "%0.1f", glob->memTot);
 	mvprintw(starty + 2, (width-startx)/4 - (strlen(tmp)+7), "%s total,", tmp); 
@@ -143,11 +143,11 @@ void print_main_win(WINDOW* win, Process* proc, Global* glob, int height, int wi
 	mvprintw(starty + 2, 10*(width-startx)/12 - (strlen(tmp)+8), "%s running", tmp);
 	sprintf(tmp, "%d", glob->zombieProc);
 	mvprintw(starty + 2, 11*(width-startx)/12 - (strlen(tmp)+7), "%s zombie", tmp);
+	
+	mvprintw(starty + 4, 7*(width-startx)/12, "%s", t);
+	mvprintw(starty + 4, 9*(width-startx)/12, "View from %d° to %d° proc", position+1, position+32);
 
-	for (int i=startx + 5; i<(width-startx); i++) {
-		for (int j=starty+10; j<height-3; j++)
-			mvprintw(starty + j, i, " ");
-	}
+
 	for (int p=0; p<height - 14; p++) {
 		Process process = proc[p + position];
 		mvprintw(starty + 11 + p, 1*(width-startx)/24 - strlen(process.pid)/2, "%s", process.pid);
@@ -201,7 +201,7 @@ WINDOW* create_main_win(int* height, int* width, int* starty, int* startx) {
 WINDOW *create_newwin(int height, int width, int starty, int startx, int box) {	
     WINDOW *local_win;
     local_win = newwin(height, width, starty, startx);
-    if (box)
+    //if (box)
 	    box(local_win, 0, 0);		/* 0, 0 gives default characters 
 					   for the vertical and horizontal
 					    lines			*/

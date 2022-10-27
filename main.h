@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <time.h>
 
 
 #ifndef _MAIN_GUARD
